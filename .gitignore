@@ -1,0 +1,9 @@
+#formats
+*.mp4
+*.mp3
+*.csv
+*.img
+*.png
+#folders
+/DataSet
+/maktab-project-interpreter
