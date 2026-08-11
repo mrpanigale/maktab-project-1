@@ -27,10 +27,9 @@ def loader(show_print=False):
         print(f"Sum of nan \n{credits_df.isna().sum()}")
         print("_" * 20)
         print(f"Duplicates samples {credits_df.duplicated().sum()}")
-        credits_df.drop_duplicates(inplace=True)
-        print(f"Dulicates droped successfully : {credits_df.duplicated().sum()}")
         print("_" * 20)
         print(credits_df["Class"].value_counts(normalize=True))
+    credits_df.drop_duplicates(inplace=True)
 
     # split data to train and test
     Xtrain, Xtest, ytrain, ytest = train_test_split(
