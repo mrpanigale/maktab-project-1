@@ -33,8 +33,8 @@ def loader(show_print=False):
 
     # split data to train and test
     Xtrain, Xtest, ytrain, ytest = train_test_split(
-        credits_df.iloc[:, :-1],
-        credits_df.iloc[:, -1],
+        credits_df.iloc[:, :-1].to_numpy(),
+        credits_df.iloc[:, -1].to_numpy(),
         test_size=0.2,
         random_state=42,
         stratify=credits_df.iloc[:, -1],
