@@ -4,8 +4,8 @@
 *.csv
 *.img
 *.png
-
 #folders
 /DataSet
 /maktab-project-interpreter
 /.idea
+src/__pycache__/
