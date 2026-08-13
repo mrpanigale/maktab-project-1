@@ -39,25 +39,28 @@ def loader(show_print=False):
         random_state=42,
         stratify=credits_df.iloc[:, -1],
     )
+    Xtrain,Xval,ytrain,yval = train_test_split(Xtrain,ytrain,test_size=0.2,random_state=42,stratify=ytrain)
 
     scaler = StandardScaler()
     scaler.fit(Xtrain)
-    Xtrain_scaled = scaler.transform(Xtrain)
-    Xtest_scaled = scaler.transform(Xtest)
+
     if show_print:
         print("_" * 20)
-        print(f"Xtrain {Xtrain_scaled.shape},\
-             Xtest {Xtest_scaled.shape}, \
+        print(f"Xtrain {Xtrain.shape},\
+              Xval {Xval.shape},\
+             Xtest {Xtest.shape}, \
              ytrain {ytrain.shape}, \
+              yval {yval.shape},\
              ytest {ytest.shape}")
     # save scaler for next uses
     if not os.path.exists(r"E:\MLprojects\maktap-project-1\models"):
-        os.makedirs(r"E:\MLprojects\maktap-project-1\models")
+        os.makedirs(r"E:\MLprojects\maktap-project-1\models",exist_ok=True)
     # save scaler object in models folder
     joblib.dump(scaler, r"E:\MLprojects\maktap-project-1\models\scaler.pkl")
-    return Xtrain_scaled, Xtest_scaled, ytrain, ytest
+
+    return Xtrain,Xval, Xtest, ytrain,yval, ytest,
 
 
 if __name__ == "__main__":
-    Xtrain, Xtest, ytrain, ytest = loader(show_print=False)
+    Xtrain,Xval, Xtest, ytrain,yval, ytest = loader(show_print=False)
     print("Data processed successfully!")
