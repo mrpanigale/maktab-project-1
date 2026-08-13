@@ -1,14 +1,12 @@
-"""This file trains four model Logistic Regression."""
+"""This file trains Logistic Regression model."""
 
-# imports
 import os
-import matplotlib.pyplot as plt
 import joblib
-# ==models==
+import pandas as pd
+import matplotlib.pyplot as plt
+
 from src import data_prep
 from sklearn.linear_model import LogisticRegression
-
-# metrics
 from sklearn.metrics import (
     precision_score,
     recall_score,
@@ -17,16 +15,20 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
 )
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
 
-# functions
+def logistic_regression_fitter(Xtrain, Xtest, ytrain):
+    """This function trains logistic regression."""
 
+    logreg = LogisticRegression(max_iter=1000)
 
-def logistic_regression_fitter(Xtrain, ytrain, Xtest):
-    """This function trains Logistic Regression classifier."""
-    logreg = LogisticRegression()
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    skf = StratifiedKFold(
+        n_splits=5,
+        shuffle=True,
+        random_state=42,
+    )
+
     grid = GridSearchCV(
         estimator=logreg,
         param_grid={"C": [0.01, 0.1, 1, 10]},
@@ -34,72 +36,130 @@ def logistic_regression_fitter(Xtrain, ytrain, Xtest):
         n_jobs=-1,
         cv=skf,
     )
+
     grid.fit(Xtrain, ytrain)
-    ypred, ypred_train = grid.predict(Xtest), grid.predict(Xtrain)
-    return ypred, ypred_train, grid
+
+    ypred_proba = grid.predict_proba(Xtest)[:, 1]
+    ypred_train_proba = grid.predict_proba(Xtrain)[:, 1]
+
+    return ypred_proba, ypred_train_proba, grid
 
 
 # ============================================================
-# load data from data_prep.py
+# Load data from data_prep.py
 # ============================================================
-Xtrain, Xtest_final, ytrain, ytest_final = data_prep.loader(show_print=False)
-Xtrain, Xval, ytrain, yval = train_test_split(
-    Xtrain, ytrain, test_size=0.2, random_state=42, stratify=ytrain
+Xtrain, Xval, Xtest_final, ytrain, yval, ytest_final = data_prep.loader(
+    show_print=False
 )
 
-# ================================================
+# load scaler object
+scaler = joblib.load(r"E:\MLprojects\maktap-project-1\models\scaler.pkl")
+
+Xtrain_scaled = scaler.transform(Xtrain)
+Xval_scaled = scaler.transform(Xval)
+
+# ============================================================
 # Logistic Regression training
-# ================================================
-ypred_logreg, ypred_trian_logreg, logreg = logistic_regression_fitter(
-    Xtrain, ytrain, Xval
+# ============================================================
+proba_logreg, proba_train_logreg, logreg = logistic_regression_fitter(
+    Xtrain_scaled,
+    Xval_scaled,
+    ytrain,
 )
 
-# print outputs train
-print(
-f"{'LogReg precision train':<20}: {precision_score(ytrain, ypred_trian_logreg):.3f}\n\
-{'LogReg recall train':<20}: {recall_score(ytrain, ypred_trian_logreg):.3f}\n\
-{'LogReg f1 train':<20}: {f1_score(ytrain, ypred_trian_logreg):.3f}\n\
-{'LogReg accuracy train':<20}: {accuracy_score(ytrain, ypred_trian_logreg):.3f}"
-)
-print("-"*30)
-# confusion matrix train
-cm_train = confusion_matrix(ytrain, ypred_trian_logreg)
-dsp = ConfusionMatrixDisplay(
-    confusion_matrix=cm_train, display_labels=["legitimate", "fraud"]
-)
-dsp.plot()
-plt.title(f"LogReg train C = {logreg.best_params_['C']}")
+thresholds = [0.3, 0.5, 0.7]
 
-# save plot
-os.makedirs(r"E:\MLprojects\maktap-project-1\reports\logreg", exist_ok=True)
-plt.savefig(r"E:\MLprojects\maktap-project-1\reports\logreg\logreg_cm_train.png")
-plt.close()
+results_path = r"E:\MLprojects\maktap-project-1\reports\logreg"
+os.makedirs(results_path, exist_ok=True)
 
-# ================================= test
-# outputs test
-print(
-f"{'LogReg precision':<20}: {precision_score(yval, ypred_logreg):.3f}\n\
-{'LogReg recall':<20}: {recall_score(yval, ypred_logreg):.3f}\n\
-{'LogReg f1':<20}: {f1_score(yval, ypred_logreg):.3f}\n\
-{'LogReg accuracy':<20}: {accuracy_score(yval, ypred_logreg):.3f}"
-)
+for threshold in thresholds:
+    threshold_name = int(threshold * 10)
 
-# confusion matrix test
-cm = confusion_matrix(yval, ypred_logreg)
-dsp = ConfusionMatrixDisplay(
-    confusion_matrix=cm, display_labels=["legitimate", "fraud"]
-)
-dsp.plot()
-plt.title(f"LogReg cm C = {logreg.best_params_['C']}")
+    ypred_logreg = (proba_logreg >= threshold).astype(int)
+    ypred_train_logreg = (proba_train_logreg >= threshold).astype(int)
 
-# save plot test
-os.makedirs(r"E:\MLprojects\maktap-project-1\reports\logreg", exist_ok=True)
-plt.savefig(r"E:\MLprojects\maktap-project-1\reports\logreg\logreg_cm.png")
-plt.close()
+    # ========================================================
+    # Train confusion matrix
+    # ========================================================
+    cm_train = confusion_matrix(ytrain, ypred_train_logreg)
 
-# save model
+    dsp = ConfusionMatrixDisplay(
+        confusion_matrix=cm_train,
+        display_labels=["legitimate", "fraud"],
+    )
+    dsp.plot()
 
+    plt.title(f"LogReg train | C={logreg.best_params_['C']} | threshold={threshold}")
+    plt.savefig(
+        os.path.join(
+            results_path,
+            f"logreg_cm_train_{threshold_name}.png",
+        )
+    )
+    plt.close()
+
+    # ========================================================
+    # Validation confusion matrix
+    # ========================================================
+    cm = confusion_matrix(yval, ypred_logreg)
+
+    dsp = ConfusionMatrixDisplay(
+        confusion_matrix=cm,
+        display_labels=["legitimate", "fraud"],
+    )
+    dsp.plot()
+
+    plt.title(
+        f"LogReg validation | C={logreg.best_params_['C']} | threshold={threshold}"
+    )
+    plt.savefig(
+        os.path.join(
+            results_path,
+            f"logreg_cm_{threshold_name}.png",
+        )
+    )
+    plt.close()
+
+    # ========================================================
+    # Save train and validation scores to CSV
+    # ========================================================
+    results = pd.DataFrame(
+        [
+            {
+                "model": f"Logistic Regression scaled tr = {threshold}",
+                "dataset": "train",
+                "precision": precision_score(ytrain, ypred_train_logreg),
+                "recall": recall_score(ytrain, ypred_train_logreg),
+                "f1_score": f1_score(ytrain, ypred_train_logreg),
+                "accuracy": accuracy_score(ytrain, ypred_train_logreg),
+                "best_C": logreg.best_params_["C"],
+            },
+            {
+                "model": f"Logistic Regression scaled tr = {threshold}",
+                "dataset": "validation",
+                "precision": precision_score(yval, ypred_logreg),
+                "recall": recall_score(yval, ypred_logreg),
+                "f1_score": f1_score(yval, ypred_logreg),
+                "accuracy": accuracy_score(yval, ypred_logreg),
+                "best_C": logreg.best_params_["C"],
+            },
+        ]
+    )
+
+    results.to_csv(
+        os.path.join(results_path, f"logreg_scores_{threshold_name}.csv"),
+        index=False,
+    )
+
+    print(f"\nLogistic Regression threshold {threshold} saved successfully.")
+
+# ============================================================
+# Save model
+# ============================================================
 model_path = r"E:\MLprojects\maktap-project-1\models"
 os.makedirs(model_path, exist_ok=True)
 
-joblib.dump(logreg.best_estimator_, os.path.join(model_path, "logistic_regression.pkl"))
+joblib.dump(
+    logreg.best_estimator_,
+    os.path.join(model_path, "logistic_regression.pkl"),
+)

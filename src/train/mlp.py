@@ -1,11 +1,11 @@
-"""This file trains four models: MLP and Logistic Regression."""
-
+"""This file trains four models: MLP"""
 
 # imports
 import os
 import matplotlib.pyplot as plt
 import joblib
 from src import data_prep
+import pandas as pd
 
 # MLP
 import torch
@@ -22,7 +22,6 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
 )
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
 
 
 # MLP structure
@@ -53,13 +52,20 @@ print(f"sum of MLP parameters: {total_params}")
 # ============================================================
 # load data from data_prep.py
 # ============================================================
-Xtrain, Xtest_final, ytrain, ytest_final = data_prep.loader(show_print=False)
-Xtrain, Xval, ytrain, yval = train_test_split(
-    Xtrain, ytrain, test_size=0.2, random_state=42, stratify=ytrain
+Xtrain, Xval, Xtest_final, ytrain, yval, ytest_final = data_prep.loader(
+    show_print=False
 )
-# tensor X,y
-X_train_tensor = torch.tensor(Xtrain, dtype=torch.float32)
-x_validation_tensor = torch.tensor(Xval, dtype=torch.float32)
+
+# load scaler object
+scaler = joblib.load(r"E:\MLprojects\maktap-project-1\models\scaler.pkl")
+
+Xtrain_scaled = scaler.transform(Xtrain)
+Xval_scaled = scaler.transform(Xval)
+
+# tensor X, y
+X_train_tensor = torch.tensor(Xtrain_scaled, dtype=torch.float32)
+x_validation_tensor = torch.tensor(Xval_scaled, dtype=torch.float32)
+
 y_train_tensor = torch.tensor(ytrain, dtype=torch.float32).reshape(-1, 1)
 y_test_tensor = torch.tensor(yval, dtype=torch.float32).reshape(-1, 1)
 
@@ -101,66 +107,110 @@ for epoch in range(epochs):
 # evaluating MLP
 mlp.eval()
 
+results_path = r"E:\MLprojects\maktap-project-1\reports\mlp"
+os.makedirs(results_path, exist_ok=True)
+
+thresholds = [0.3, 0.5, 0.7]
+all_results = []
+
 with torch.no_grad():
-    # output validation
+    # validation probabilities
     outputs = mlp(x_validation_tensor)
-    # treshold
-    threshold = 0.3
-    # apply step function on probability
-    ypred_mlp = (torch.sigmoid(outputs) >= threshold).float().cpu().numpy()
-    ytrue_mlp = y_test_tensor.cpu().numpy()
-    # outputs
+    proba_mlp = torch.sigmoid(outputs).cpu().numpy().ravel()
 
-    print(
-f"{"MLP precision":<20}: {precision_score(ytrue_mlp,ypred_mlp):.3f}\n\
-{"MLP recall":<20}: {recall_score(ytrue_mlp,ypred_mlp):.3f}\n\
-{"MLP f1 score":<20}: {f1_score(ytrue_mlp,ypred_mlp):.3f}\n\
-{"MLP accuracy":<20}: {accuracy_score(ytrue_mlp,ypred_mlp):.3f}"
-    )
-    print("-"*30)
-    # confusion matrix test
-    cm = confusion_matrix(ytrue_mlp, ypred_mlp)
-    dsp = ConfusionMatrixDisplay(
-        confusion_matrix=cm, display_labels=["legitimate", "fraud"]
-    )
-    dsp.plot()
-    plt.title("MLP")
-    # save plot
-
-    os.makedirs(r"E:\MLprojects\maktap-project-1\reports\mlp", exist_ok=True)
-    plt.savefig(r"E:\MLprojects\maktap-project-1\reports\mlp\mlp_cm.png")
-    plt.close()
-    # ================== train
-    # output train
+    # train probabilities
     outputs_train = mlp(X_train_tensor)
+    proba_train_mlp = torch.sigmoid(outputs_train).cpu().numpy().ravel()
 
-    # apply step function on probability train
-    ypred_train_mlp = (torch.sigmoid(outputs_train) >= threshold).float().cpu().numpy()
-    ytrue_train_mlp = y_train_tensor.cpu().numpy()
 
-    # scores outputs train
+for threshold in thresholds:
+    ypred_mlp = (proba_mlp >= threshold).astype(int)
+    ypred_train_mlp = (proba_train_mlp >= threshold).astype(int)
 
-    print(
-f"{"MLP precision train":<20}: {precision_score(ytrue_train_mlp,ypred_train_mlp):.3f}\n\
-{"MLP recall train":<20}: {recall_score(ytrue_train_mlp,ypred_train_mlp):.3f}\n\
-{"MLP f1 score train":<20}: {f1_score(ytrue_train_mlp,ypred_train_mlp):.3f}\n\
-{"MLP accuracy train":<20}: {accuracy_score(ytrue_train_mlp,ypred_train_mlp):.3f}\n"
-)
-    print("-"*30)
-    # confusion matrix
-    cm_train = confusion_matrix(ytrue_train_mlp, ypred_train_mlp)
+    # ================================================
+    # confusion matrix train
+    # ================================================
+    cm_train = confusion_matrix(ytrain, ypred_train_mlp)
     dsp = ConfusionMatrixDisplay(
-        confusion_matrix=cm_train, display_labels=["legitimate", "fraud"]
+        confusion_matrix=cm_train,
+        display_labels=["legitimate", "fraud"],
     )
     dsp.plot()
-    plt.title("MLP train")
+    plt.title(f"MLP train threshold: {threshold}")
 
-    # save trian plot
-
-    os.makedirs(r"E:\MLprojects\maktap-project-1\reports\mlp", exist_ok=True)
-    plt.savefig(r"E:\MLprojects\maktap-project-1\reports\mlp\mlp_cm_train.png")
+    plt.savefig(
+        os.path.join(
+            results_path,
+            f"mlp_cm_train{int(threshold * 10)}.png",
+        )
+    )
     plt.close()
 
+    # ================================================
+    # confusion matrix validation
+    # ================================================
+    cm = confusion_matrix(yval, ypred_mlp)
+    dsp = ConfusionMatrixDisplay(
+        confusion_matrix=cm,
+        display_labels=["legitimate", "fraud"],
+    )
+    dsp.plot()
+    plt.title(f"MLP threshold: {threshold}")
+
+    plt.savefig(
+        os.path.join(
+            results_path,
+            f"mlp_cm{int(threshold * 10)}.png",
+        )
+    )
+    plt.close()
+
+    # ================================================
+    # Save train and validation scores to CSV
+    # ================================================
+    results = pd.DataFrame(
+        [
+            {
+                "model": f"MLP tr = {threshold}",
+                "dataset": "train",
+                "precision": precision_score(ytrain, ypred_train_mlp),
+                "recall": recall_score(ytrain, ypred_train_mlp),
+                "f1_score": f1_score(ytrain, ypred_train_mlp),
+                "accuracy": accuracy_score(ytrain, ypred_train_mlp),
+            },
+            {
+                "model": f"MLP tr = {threshold}",
+                "dataset": "validation",
+                "precision": precision_score(yval, ypred_mlp),
+                "recall": recall_score(yval, ypred_mlp),
+                "f1_score": f1_score(yval, ypred_mlp),
+                "accuracy": accuracy_score(yval, ypred_mlp),
+            },
+        ]
+    )
+
+    results.to_csv(
+        os.path.join(
+            results_path,
+            f"mlp_scores{int(threshold * 10)}.csv",
+        ),
+        index=False,
+    )
+
+    all_results.append(
+        {
+            "threshold": threshold,
+            "f1_score": f1_score(yval, ypred_mlp),
+        }
+    )
+
+    print(f"\nMLP threshold {threshold} scores saved successfully.")
+# find best threshold
+f1_list = [res["f1_score"] for res in all_results]
+best_idx = f1_list.index(max(f1_list))
+best_threshold = all_results[best_idx]["threshold"]
+
+print(f"\nBest MLP threshold based on validation F1: {best_threshold}")
 # save model
 
 model_path = r"E:\MLprojects\maktap-project-1\models"
@@ -169,10 +219,8 @@ os.makedirs(model_path, exist_ok=True)
 torch.save(
     {
         "state_dict": mlp.state_dict(),
-        "threshold": 0.3,
+        "threshold": best_threshold,
         "input_dim": 30,
     },
     os.path.join(model_path, "mlp.pt"),
 )
-
-
