@@ -32,8 +32,10 @@ class MLP(nn.Module):
         self.network = nn.Sequential(
             nn.Linear(30, 64),
             nn.ReLU(),
+            nn.Dropout(0.2),
             nn.Linear(64, 32),
             nn.ReLU(),
+            nn.Dropout(0.2),
             nn.Linear(32, 1),
         )
 
@@ -76,9 +78,13 @@ train_loader = DataLoader(dataset=train_dataset, batch_size=256, shuffle=True)
 
 # training loop
 epochs = 40
-
 loss_history = []
 loss_history_batch = []
+#early stopping setup
+patience = 5
+counter = 0
+best_val_loss = float('inf')
+
 
 for epoch in range(epochs):
     total_loss = 0
@@ -97,7 +103,21 @@ for epoch in range(epochs):
         loss_history_batch.append(loss.item())
     # average loss
     avg_loss = total_loss / len(train_loader)
+    #extract validation score to avoid overfitting
+    mlp.eval()
+    with torch.no_grad():
+        val_out = mlp(x_validation_tensor)
+        val_loss = criterion(val_out, y_test_tensor).item()
 
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        counter = 0
+    else:
+        counter += 1
+        if counter >= patience:
+            print(f"Early stopping at epoch {epoch + 1}")
+            break
+    mlp.train()
     loss_history.append(avg_loss)
 
     if (epoch + 1) % 20 == 0:
