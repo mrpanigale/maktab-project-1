@@ -46,8 +46,7 @@ Xtrain, Xval, Xtest_final, ytrain, yval, ytest_final = data_prep.loader(
 )
 
 
-#We will not scale dataset this time to see not scaled data how affect KNN
-
+# We will not scale dataset this time to see not scaled data how affect KNN
 
 
 # ================================================
