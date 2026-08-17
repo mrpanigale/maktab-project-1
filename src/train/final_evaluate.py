@@ -2,8 +2,7 @@
 
 # ============imports============
 import joblib
-import os
-
+from pathlib import Path
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -18,6 +17,7 @@ from sklearn.metrics import (
 )
 import matplotlib.pyplot as plt
 
+base_dir = Path(__file__).resolve().parent.parent.parent
 # ================MLP===================
 
 
@@ -39,17 +39,17 @@ class MLP(nn.Module):
 
 
 # ================MLP stats===================
-model_stats = torch.load(r"models\mlp.pt")
-# best_threshold = model_stats["threshold"]
-best_threshold = 0.3
+model_stats = torch.load(base_dir/"models"/"mlp.pt")
+best_threshold = model_stats["threshold"]
 # ================MLP obj===================
 model = MLP()
 model.load_state_dict(model_stats["state_dict"])
 # ==========scaler============
-scaler = joblib.load("models/scaler.pkl")
+scaler = joblib.load(base_dir/"models"/"scaler.pkl")
 
-Xtrain, Xval, Xtest_final, ytrain, yval, ytest_final = data_prep.loader(
-    show_print=False
+Xtest_final ,ytest_final = data_prep.loader(
+    show_print=False,
+    return_test=True
 )
 Xtest_final_scaled = scaler.transform(Xtest_final)
 Xtest_tensor = torch.tensor(Xtest_final_scaled, dtype=torch.float32)
@@ -64,8 +64,9 @@ with torch.no_grad():
 # ================================================
 # results path
 # ================================================
-results_path = r"E:\MLprojects\maktap-project-1\reports\final_evaluate"
-os.makedirs(results_path, exist_ok=True)
+
+results_path = base_dir/"reports"/"final_evaluate"
+results_path.mkdir(parents=True, exist_ok=True)
 
 
 # ================================================
@@ -79,12 +80,7 @@ dsp = ConfusionMatrixDisplay(
 dsp.plot()
 plt.title(f"MLP threshold: {best_threshold}")
 
-plt.savefig(
-    os.path.join(
-        results_path,
-        f"best_cm{int(best_threshold * 10)}.png",
-    )
-)
+plt.savefig(results_path / f"best_cm{int(best_threshold * 10)}.png")
 plt.close()
 
 # ================================================
@@ -104,10 +100,7 @@ results = pd.DataFrame(
 )
 
 results.to_csv(
-    os.path.join(
-        results_path,
-        f"best_scores{int(best_threshold * 10)}.csv",
-    ),
+    results_path / f"best_scores{int(best_threshold * 10)}.csv",
     index=False,
 )
 
@@ -117,8 +110,8 @@ print(f"\n best model scores saved successfully.")
 
 # save model
 
-model_path = r"E:\MLprojects\maktap-project-1\models"
-os.makedirs(model_path, exist_ok=True)
+model_path = base_dir/"models"
+model_path.mkdir(parents=True, exist_ok=True)
 
 torch.save(
     {
@@ -126,5 +119,5 @@ torch.save(
         "threshold": best_threshold,
         "input_dim": 30,
     },
-    os.path.join(model_path, "bestmodel.pt"),
+    model_path / "bestmodel.pt",
 )

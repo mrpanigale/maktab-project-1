@@ -1,10 +1,10 @@
 """This file trains Logistic Regression model."""
 
-import os
+# =============imports==============
 import joblib
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from src import data_prep
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -17,12 +17,15 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
-
+base_dir = Path(__file__).resolve().parent.parent.parent
+# =============logreg trainer==============
 def logistic_regression_fitter(Xtrain, Xtest, ytrain):
     """This function trains logistic regression."""
 
+    # =============model==============
     logreg = LogisticRegression(max_iter=1000)
 
+    # =============Cross-Validation==============
     skf = StratifiedKFold(
         n_splits=5,
         shuffle=True,
@@ -39,6 +42,7 @@ def logistic_regression_fitter(Xtrain, Xtest, ytrain):
 
     grid.fit(Xtrain, ytrain)
 
+    # =============Extract-probability==============
     ypred_proba = grid.predict_proba(Xtest)[:, 1]
     ypred_train_proba = grid.predict_proba(Xtrain)[:, 1]
 
@@ -46,20 +50,21 @@ def logistic_regression_fitter(Xtrain, Xtest, ytrain):
 
 
 # ============================================================
-# Load data from data_prep.py
+#             Load data from data_prep.py
 # ============================================================
-Xtrain, Xval, Xtest_final, ytrain, yval, ytest_final = data_prep.loader(
-    show_print=False
+Xtrain, Xval ,ytrain, yval = data_prep.loader(
+    show_print=False,
+    return_test=False
 )
 
-# load scaler object
-scaler = joblib.load(r"E:\MLprojects\maktap-project-1\models\scaler.pkl")
-
+# =============Scaler==============
+# TODO: try expect
+scaler = joblib.load(base_dir/"models"/"scaler.pkl")
 Xtrain_scaled = scaler.transform(Xtrain)
 Xval_scaled = scaler.transform(Xval)
 
 # ============================================================
-# Logistic Regression training
+#            Logistic Regression training
 # ============================================================
 proba_logreg, proba_train_logreg, logreg = logistic_regression_fitter(
     Xtrain_scaled,
@@ -69,9 +74,10 @@ proba_logreg, proba_train_logreg, logreg = logistic_regression_fitter(
 
 thresholds = [0.3, 0.5, 0.7]
 
-results_path = r"E:\MLprojects\maktap-project-1\reports\logreg"
-os.makedirs(results_path, exist_ok=True)
-
+# =============Create and Check report path==============
+results_path = base_dir/"reports"/"logreg"
+results_path.mkdir(parents=True, exist_ok=True)
+# =============Search-Thresholds==============
 for threshold in thresholds:
     threshold_name = int(threshold * 10)
 
@@ -79,7 +85,7 @@ for threshold in thresholds:
     ypred_train_logreg = (proba_train_logreg >= threshold).astype(int)
 
     # ========================================================
-    # Train confusion matrix
+    #              Train confusion matrix
     # ========================================================
     cm_train = confusion_matrix(ytrain, ypred_train_logreg)
 
@@ -91,15 +97,12 @@ for threshold in thresholds:
 
     plt.title(f"LogReg train | C={logreg.best_params_['C']} | threshold={threshold}")
     plt.savefig(
-        os.path.join(
-            results_path,
-            f"logreg_cm_train_{threshold_name}.png",
-        )
+        results_path/f"logreg_cm_train_{threshold_name}.png"
     )
     plt.close()
 
     # ========================================================
-    # Validation confusion matrix
+    #              Validation confusion matrix
     # ========================================================
     cm = confusion_matrix(yval, ypred_logreg)
 
@@ -113,19 +116,18 @@ for threshold in thresholds:
         f"LogReg validation | C={logreg.best_params_['C']} | threshold={threshold}"
     )
     plt.savefig(
-        os.path.join(
-            results_path,
-            f"logreg_cm_{threshold_name}.png",
-        )
+        results_path/f"logreg_cm_{threshold_name}.png"
     )
     plt.close()
 
     # ========================================================
-    # Save train and validation scores to CSV
+    #       Save train and validation scores to CSV
     # ========================================================
+    # TODO: zero Devision
     results = pd.DataFrame(
         [
             {
+                # =============train==============
                 "model": f"Logistic Regression scaled tr = {threshold}",
                 "dataset": "train",
                 "precision": precision_score(ytrain, ypred_train_logreg),
@@ -135,6 +137,7 @@ for threshold in thresholds:
                 "best_C": logreg.best_params_["C"],
             },
             {
+                # =============validation==============
                 "model": f"Logistic Regression scaled tr = {threshold}",
                 "dataset": "validation",
                 "precision": precision_score(yval, ypred_logreg),
@@ -146,20 +149,20 @@ for threshold in thresholds:
         ]
     )
 
+    # =============Save-reports==============
     results.to_csv(
-        os.path.join(results_path, f"logreg_scores_{threshold_name}.csv"),
+        results_path/f"logreg_scores_{threshold_name}.csv",
         index=False,
     )
 
     print(f"\nLogistic Regression threshold {threshold} saved successfully.")
 
 # ============================================================
-# Save model
+#                    Save model
 # ============================================================
-model_path = r"E:\MLprojects\maktap-project-1\models"
-os.makedirs(model_path, exist_ok=True)
-
+model_path = base_dir/"models"
+model_path.mkdir(parents=True, exist_ok=True)
 joblib.dump(
     logreg.best_estimator_,
-    os.path.join(model_path, "logistic_regression.pkl"),
+    model_path/"logistic_regression.pkl"
 )
