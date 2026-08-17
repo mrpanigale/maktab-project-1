@@ -204,18 +204,18 @@ for threshold in thresholds:
                 # =============train==============
                 "model": f"MLP tr = {threshold}",
                 "dataset": "train",
-                "precision": precision_score(ytrain, ypred_train_mlp),
-                "recall": recall_score(ytrain, ypred_train_mlp),
-                "f1_score": f1_score(ytrain, ypred_train_mlp),
+                "precision": precision_score(ytrain, ypred_train_mlp,zero_division=0),
+                "recall": recall_score(ytrain, ypred_train_mlp,zero_division=0),
+                "f1_score": f1_score(ytrain, ypred_train_mlp,zero_division=0),
                 "accuracy": accuracy_score(ytrain, ypred_train_mlp),
             },
             {
                 # =============validation==============
                 "model": f"MLP tr = {threshold}",
                 "dataset": "validation",
-                "precision": precision_score(yval, ypred_mlp),
-                "recall": recall_score(yval, ypred_mlp),
-                "f1_score": f1_score(yval, ypred_mlp),
+                "precision": precision_score(yval, ypred_mlp,zero_division=0),
+                "recall": recall_score(yval, ypred_mlp,zero_division=0),
+                "f1_score": f1_score(yval, ypred_mlp,zero_division=0),
                 "accuracy": accuracy_score(yval, ypred_mlp),
             },
         ]

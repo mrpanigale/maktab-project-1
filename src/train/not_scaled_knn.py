@@ -43,8 +43,9 @@ def knn_fitter(Xtrain, Xtest, ytrain, n_neighbors: list):
 # ============================================================
 #                 load data from data_prep.py
 # ============================================================
-Xtrain, Xval, Xtest_final, ytrain, yval, ytest_final = data_prep.loader(
-    show_print=False
+Xtrain, Xval, ytrain, yval = data_prep.loader(
+    show_print=False,
+    return_test=False,
 )
 
 
@@ -107,18 +108,18 @@ for threshold in thresholds:
             {
                 "model": f"KNN scaled tr = {threshold}",
                 "dataset": "train",
-                "precision": precision_score(ytrain, ypred_train_knn),
-                "recall": recall_score(ytrain, ypred_train_knn),
-                "f1_score": f1_score(ytrain, ypred_train_knn),
+                "precision": precision_score(ytrain, ypred_train_knn,zero_division=0),
+                "recall": recall_score(ytrain, ypred_train_knn,zero_division=0),
+                "f1_score": f1_score(ytrain, ypred_train_knn,zero_division=0),
                 "accuracy": accuracy_score(ytrain, ypred_train_knn),
                 "best_n_neighbors": knn.best_params_["n_neighbors"],
             },
             {
                 "model": f"KNN scaled tr = {threshold}",
                 "dataset": "validation",
-                "precision": precision_score(yval, ypred_knn),
-                "recall": recall_score(yval, ypred_knn),
-                "f1_score": f1_score(yval, ypred_knn),
+                "precision": precision_score(yval, ypred_knn,zero_division=0),
+                "recall": recall_score(yval, ypred_knn,zero_division=0),
+                "f1_score": f1_score(yval, ypred_knn,zero_division=0),
                 "accuracy": accuracy_score(yval, ypred_knn),
                 "best_n_neighbors": knn.best_params_["n_neighbors"],
             },
