@@ -11,6 +11,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from pathlib import Path
+import sys
+from sklearn.preprocessing import StandardScaler
 
 base_dir = Path(__file__).resolve().parent.parent
 # ================MLP===================
@@ -64,9 +66,12 @@ def predict(json_request):
 
 
 # ================scaler===================
-scaler_path = base_dir/"models"/"scaler.pkl"
-scaler = joblib.load(scaler_path)
-
+try:
+    scaler_path = base_dir/"models"/"scaler.pkl"
+    scaler = joblib.load(scaler_path)
+except FileNotFoundError:
+    print("scaler is not in right path please run preprocessor first")
+    sys.exit(1)
 # ================MLP stats===================
 model_path = base_dir/"models"/"bestmodel.pt"
 model_stats = torch.load(model_path)
@@ -110,7 +115,7 @@ if __name__ == "__main__":
             "V26": -0.189115,
             "V27": 0.133558,
             "V28": -0.021053,
-            "Amount": 149.62,
+            "Amount": 149.62
         }
     )
     print(predict(sample_json))
