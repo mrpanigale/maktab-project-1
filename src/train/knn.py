@@ -4,6 +4,7 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
 import joblib
+import sys
 from src import data_prep
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
@@ -52,8 +53,12 @@ Xtrain, Xval, ytrain, yval = data_prep.loader(
 
 
 # =============Load-Scaler==============
-scaler_path = base_dir / "models"/"scaler.pkl"
-scaler = joblib.load(scaler_path)
+try:
+    scaler_path = base_dir/"models"/"scaler.pkl"
+    scaler = joblib.load(scaler_path)
+except FileNotFoundError:
+    print("scaler is not in right path please run data_prep.py first")
+    sys.exit(1)
 
 Xtrain_scaled = scaler.transform(Xtrain)
 Xval_scaled = scaler.transform(Xval)
