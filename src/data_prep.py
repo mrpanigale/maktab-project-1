@@ -3,16 +3,18 @@ This python file's for preprocessing and data Scrubbing
 """
 
 #===========import  moduls==============
-import os
+from pathlib import Path
 import joblib
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+base_dir = Path(__file__).resolve().parent.parent
 #=============functions=================
 def loader(show_print=False,return_test=False):
     #==============read CSV=============
-    credits_df = pd.read_csv(r"E:\MLprojects\maktap-project-1\DataSet\creditcard.csv")
+    data_path = base_dir/"DataSet"/"creditcard.csv"
+    credits_df = pd.read_csv(data_path)
 
     #=======analyzing dataset========
     if show_print:
@@ -58,8 +60,9 @@ def loader(show_print=False,return_test=False):
              ytest {ytest.shape}")
 
     #===============Save-Scaler==============
-    os.makedirs(r"E:\MLprojects\maktap-project-1\models", exist_ok=True)
-    joblib.dump(scaler, r"E:\MLprojects\maktap-project-1\models\scaler.pkl")
+    model_path = base_dir/"models"
+    model_path.mkdir(parents=True, exist_ok=True)
+    joblib.dump(scaler, model_path/"scaler.pkl")
 
     #==========Optional Return===============
     if return_test:
