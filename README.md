@@ -3,14 +3,14 @@ This task is fraud detection, we gonna fit few models on kaggle fraud detection 
 to predict a binary target (fraud or not)
 
 
-# Dataset analyze:
-We have 30 feature : time => bigscale, amount => big scale,v1 ... v28 =>small scale
-time: times of transaction
-amount: value of transaction
-v1 ... v28: PCA transformed some features because they were private features
-we should scale dataset because features scale are too different.
-0.017 % of observes are fraud transactions
-there is no any missing value in rows
+# Dataset Overview:
+#### We have 30 feature : time => bigscale, amount => big scale,v1 ... v28 =>small scale
+#### time: times of transaction
+#### amount: value of transaction
+#### v1 ... v28: PCA transformed some features because they were private features
+#### we should scale dataset because features scale are too different.
+#### 0.017 % of observes are fraud transactions
+#### there is no any missing value in rows
 
 # Hypothesis before training:
 ## Question 1:
@@ -78,9 +78,9 @@ Decision Tree , this model scores was great on validation datas
 FN = 13 in all thresholds and recall 82 in all thresholds it looks threshold has no effect on tree.
 because: tree split samples in leaves , each leaf has probability = percentage of positives
 and given that our tree worked nice on our data the probabilities was so near to 0 or 1 and threshold had no effect on it.
-## 3.second place(same score with tree but faster than first model):
+## 3.Third place(same score with tree but faster than first model):
 We trained an MLP with 30 input features, 64 neurons in the first hidden layer, 32 neurons in the second hidden layer, and 1 output neuron.
-best threshold was = 0.3 scores was = 13 FN , Recall = 82% also MLP is so faster than KNN in predicting and this is so
+best threshold was = 0.3 scores was = 15 FN , Recall = 80% also MLP is so faster than KNN in predicting and this is so
 matter in industry.
 ## worst model :
 logistic regression was too simple to learn a complex task like this best threshold was = 0.3 
@@ -95,7 +95,17 @@ because of stratied cross-validation and tune models we controlled effect of imb
 and scores for MLP,Decision Tree , KNN was acceptable for fraud detection
 
 # Running insturction
-WIP...
+## installation:
+- ### `pip install -r requirements.txt`<br>
+## training:
+- 1.run `src/data_prep.py`
+- 2.run `src/train/run models one by one...`
+- remember just run models like this:
+* `src.train.model_name`
+## FastAPI:
+- 1.run in terminal `uvicorn src.api:app --reload`
+- 2.Go to http://127.0.0.1:8000/docs
+- 3.Copy your JSON and click on Execute
 
 # Reflection Question :
 ## Question 1:
@@ -113,3 +123,4 @@ reports are available in reports directory
 # Quesiton 3:
 if I have an additional week to work on this project<br>
 I will test more kind of neural networks with different architecture to achieve fancier results
+Also in additional week i can fit a clustring algorith and use this kind of learning to check members behaviors.
