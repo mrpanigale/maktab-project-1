@@ -6,13 +6,14 @@ import matplotlib.pyplot as plt
 import joblib
 from src import data_prep
 import pandas as pd
-
+import sys
 #=============MLP-imports==============
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
-
+import random
+import numpy as np
 #=============metrics-import==============
 from sklearn.metrics import (
     precision_score,
@@ -22,6 +23,15 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
 )
+
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 base_dir = Path(__file__).resolve().parent.parent.parent
 #=============MLP-Structure==============
@@ -68,9 +78,12 @@ Xtrain, Xval, ytrain, yval = data_prep.loader(
 )
 
 #=============scaler==============
-#TODO: try except
-scaler_path = base_dir /"models" /"scaler.pkl"
-scaler = joblib.load(scaler_path)
+try:
+    scaler_path = base_dir/"models"/"scaler.pkl"
+    scaler = joblib.load(scaler_path)
+except FileNotFoundError:
+    print("scaler is not in right path please run data_prep.py first")
+    sys.exit(1)
 
 Xtrain_scaled = scaler.transform(Xtrain)
 Xval_scaled = scaler.transform(Xval)
@@ -84,8 +97,15 @@ y_test_tensor = torch.tensor(yval, dtype=torch.float32).reshape(-1, 1)
 
 train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
 #=============set batch size and loader==============
-train_loader = DataLoader(dataset=train_dataset, batch_size=256, shuffle=True)
+g = torch.Generator()
+g.manual_seed(seed)
 
+train_loader = DataLoader(
+    dataset=train_dataset,
+    batch_size=256,
+    shuffle=True,
+    generator=g
+)
 #=============loop control variables==============
 epochs = 40
 loss_history = []
@@ -229,17 +249,17 @@ for threshold in thresholds:
     all_results.append(
         {
             "threshold": threshold,
-            "f1_score": f1_score(yval, ypred_mlp),
+            "recall_score": recall_score(yval, ypred_mlp,zero_division=0),
         }
     )
 
     print(f"\nMLP threshold {threshold} scores saved successfully.")
 # =============best-threshold==============
-f1_list = [res["f1_score"] for res in all_results]
-best_idx = f1_list.index(max(f1_list))
+recall_list = [res["recall_score"] for res in all_results]
+best_idx = recall_list.index(max(recall_list))
 best_threshold = all_results[best_idx]["threshold"]
 
-print(f"\nBest MLP threshold based on validation F1: {best_threshold}")
+print(f"\nBest MLP threshold based on validation Recall: {best_threshold}")
 
 # =============Save-Model==============
 model_path = base_dir /"models"
