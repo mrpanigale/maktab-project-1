@@ -10,7 +10,9 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
+from pathlib import Path
 
+base_dir = Path(__file__).resolve().parent.parent
 # ================MLP===================
 
 
@@ -62,10 +64,12 @@ def predict(json_request):
 
 
 # ================scaler===================
-scaler = joblib.load(r"models\scaler.pkl")
+scaler_path = base_dir/"models"/"scaler.pkl"
+scaler = joblib.load(scaler_path)
 
 # ================MLP stats===================
-model_stats = torch.load(r"models\bestmodel.pt")
+model_path = base_dir/"models"/"bestmodel.pt"
+model_stats = torch.load(model_path)
 best_threshold = model_stats["threshold"]
 # ================MLP obj===================
 model = MLP()
