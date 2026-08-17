@@ -5,6 +5,7 @@ import joblib
 from pathlib import Path
 import pandas as pd
 import torch
+import sys
 import torch.nn as nn
 from src import data_prep
 from sklearn.metrics import (
@@ -45,7 +46,12 @@ best_threshold = model_stats["threshold"]
 model = MLP()
 model.load_state_dict(model_stats["state_dict"])
 # ==========scaler============
-scaler = joblib.load(base_dir/"models"/"scaler.pkl")
+try:
+    scaler_path = base_dir/"models"/"scaler.pkl"
+    scaler = joblib.load(scaler_path)
+except FileNotFoundError:
+    print("scaler is not in right path please run data_prep.py first")
+    sys.exit(1)
 
 Xtest_final ,ytest_final = data_prep.loader(
     show_print=False,
@@ -65,7 +71,7 @@ with torch.no_grad():
 # results path
 # ================================================
 
-results_path = base_dir/"reports"/"final_evaluate"
+results_path = base_dir/"reports"/"final_evaluate"/"mlp"
 results_path.mkdir(parents=True, exist_ok=True)
 
 
