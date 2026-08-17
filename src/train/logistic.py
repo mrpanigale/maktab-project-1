@@ -3,6 +3,7 @@
 # =============imports==============
 import joblib
 from pathlib import Path
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 from src import data_prep
@@ -23,7 +24,7 @@ def logistic_regression_fitter(Xtrain, Xtest, ytrain):
     """This function trains logistic regression."""
 
     # =============model==============
-    logreg = LogisticRegression(max_iter=1000)
+    logreg = LogisticRegression(max_iter=1000,random_state=42)
 
     # =============Cross-Validation==============
     skf = StratifiedKFold(
@@ -58,8 +59,14 @@ Xtrain, Xval ,ytrain, yval = data_prep.loader(
 )
 
 # =============Scaler==============
-# TODO: try expect
-scaler = joblib.load(base_dir/"models"/"scaler.pkl")
+try:
+    scaler_path = base_dir/"models"/"scaler.pkl"
+    scaler = joblib.load(scaler_path)
+except FileNotFoundError:
+    print("scaler is not in right path please run data_prep.py first")
+    sys.exit(1)
+
+
 Xtrain_scaled = scaler.transform(Xtrain)
 Xval_scaled = scaler.transform(Xval)
 
@@ -123,7 +130,7 @@ for threshold in thresholds:
     # ========================================================
     #       Save train and validation scores to CSV
     # ========================================================
-    # TODO: zero Devision
+
     results = pd.DataFrame(
         [
             {
