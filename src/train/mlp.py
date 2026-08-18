@@ -1,4 +1,4 @@
-"""This file trains four models: MLP"""
+"""This file trains models: MLP"""
 
 #=============imports==============
 from pathlib import Path
@@ -7,6 +7,8 @@ import joblib
 from src import data_prep
 import pandas as pd
 import sys
+import copy
+
 #=============MLP-imports==============
 import torch
 import torch.nn as nn
@@ -115,8 +117,9 @@ loss_history_batch = []
 patience = 5
 counter = 0
 best_val_loss = float("inf")
-
+best_state_dict = None
 #=============Training-Loop==============
+
 for epoch in range(epochs):
     total_loss = 0
     # =============return a Batch in each iter==============
@@ -149,6 +152,7 @@ for epoch in range(epochs):
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         counter = 0
+        best_state_dict = copy.deepcopy(mlp.state_dict())
     else:
         counter += 1
         if counter >= patience:
@@ -161,6 +165,9 @@ for epoch in range(epochs):
 
         print(f"Epoch {epoch+1}/{epochs}, " f"Loss: {avg_loss:.4f}")
 
+# =============apply best val params==============
+if best_state_dict is not None:
+    mlp.load_state_dict(best_state_dict)
 # =============activate evaluating mode==============
 mlp.eval()
 results_path = base_dir /"reports"/"mlp"
