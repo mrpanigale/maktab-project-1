@@ -47,7 +47,7 @@ class FraudRequest(BaseModel):
 
 
 # =========API===================
-app = FastAPI(title="Fraud Ditection API", version="1.0.0")
+app = FastAPI(title="Fraud Detection API", version="1.0.0")
 
 
 @app.get("/health")
