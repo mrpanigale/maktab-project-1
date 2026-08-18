@@ -45,9 +45,9 @@
   - ##### Output: 1 neuron
 - #### I decreased 20% of neuron powers and added early 
 - #### stopping to avoid overfitting(model was free to have 40 epochs but stoped at 12) because validation score did not get better
-- #### Best Thresholds = 0.5 , Because of detecting Fraudental transactions and Trade-off between FP,FN
-- #### threshold scores for validation ==>  Precision: 89,Recall: 80
-- #### Test data scores: Recall = 73, Precision = 85
+- #### Best Thresholds = 0.3 , Because of detecting Fraudental transactions and Trade-off between FP,FN
+- #### threshold scores for validation ==>  Precision: 90,Recall: 83
+- #### Test data scores: Recall = 75, Precision = 87
 
 # Model Selection :
 - #### I selected MLP as best model because only scores are not matter ,Also perfomance when a lot of transactions are waiting to predic
