@@ -1,4 +1,4 @@
-"""This file trains four model KNN"""
+"""This file trains model KNN"""
 
 # =============imports==============
 import matplotlib.pyplot as plt
