@@ -4,9 +4,10 @@
 *.csv
 *.img
 *.png
+*.pyc
 #folders
 /DataSet
 /maktab-project-interpreter
 /.idea
 __pycache__/
-*.pyc
+/notebooks
