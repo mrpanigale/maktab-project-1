@@ -93,10 +93,10 @@ Xval_scaled = scaler.transform(Xval)
 
 #=============turn-data to Tensor==============
 X_train_tensor = torch.tensor(Xtrain_scaled, dtype=torch.float32)
-x_validation_tensor = torch.tensor(Xval_scaled, dtype=torch.float32)
+x_validation_tensor = torch.tensor(Xval_scaled, dtype=torch.float32).to(device)
 
 y_train_tensor = torch.tensor(ytrain, dtype=torch.float32).reshape(-1, 1)
-y_test_tensor = torch.tensor(yval, dtype=torch.float32).reshape(-1, 1)
+y_test_tensor = torch.tensor(yval, dtype=torch.float32).reshape(-1, 1).to(device)
 
 train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
 #=============set batch size and loader==============
@@ -125,6 +125,8 @@ for epoch in range(epochs):
     total_loss = 0
     # =============return a Batch in each iter==============
     for X_batch, y_batch in train_loader:
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device)
         prediction = mlp(X_batch)
         # =============Calculate-Loss==============
         loss = criterion(prediction, y_batch)
@@ -183,7 +185,7 @@ with torch.no_grad():
     proba_mlp = torch.sigmoid(outputs).cpu().numpy().ravel()
 
     # =============train-proba==============
-    outputs_train = mlp(X_train_tensor)
+    outputs_train = mlp(X_train_tensor.to(device))
     proba_train_mlp = torch.sigmoid(outputs_train).cpu().numpy().ravel()
 
 # =============search-thresholds==============
