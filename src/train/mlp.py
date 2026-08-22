@@ -59,7 +59,8 @@ class MLP(nn.Module):
         return self.network(x)
 
 #=============mlp-object==============
-mlp = MLP()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+mlp = MLP().to(device)
 
 #=============Loss==============
 criterion = nn.BCEWithLogitsLoss()
